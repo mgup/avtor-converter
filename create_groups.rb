@@ -144,3 +144,33 @@ cl_weeks_f.write("%04s\r\n" % total_count.to_s)
     cl_weeks_f.write("#{g[:weeks]}\r\n")
   end
 end
+
+# Формируем списки преподавателей.
+preps = []
+mega.each do |row|
+  next if row[:prep].nil?
+  next if row[:prep] == 'Вакансия'
+
+  name = row[:prep][1..row[:prep].length]
+  preps.push({ name: name, department: row[:department] })
+end
+
+uniq_preps = preps.uniq { |item| item[:department] + item[:name] }
+
+i = 1
+uniq_preps.each_slice(20) do |group|
+  name_f = File.open("NAME#{i}.DAT", 'w:windows-1251')
+  name_f.write("#{group.length}\r\n")
+  group.each do |prep|
+    name_f.write("   2#{'%04s' % prep[:department]} 0 254 255 255 255 255 255 255 255 255 255 255   7 #{prep[:name]}\r\n")
+  end
+
+  i += 1
+end
+
+while i <= 99 do
+  name_f = File.open("NAME#{i}.DAT", 'w:windows-1251')
+  name_f.write("0\r\n")
+
+  i += 1
+end
