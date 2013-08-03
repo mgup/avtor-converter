@@ -167,10 +167,10 @@ mega.each do |row|
   name = row[:prep][1..row[:prep].length]
   preps.push({ name: name, department: row[:department] })
 end
-uniq_preps = preps.uniq { |item| item[:department] + item[:name] }
+uniq_preps = preps.uniq { |item| item[:department] + item[:name] }.sort { |a,b| a[:name] <=> b[:name] }
 
 i = 1
-uniq_preps.sort { |a,b| a[:name] <=> b[:name] }.each_slice(20) do |group|
+uniq_preps.each_slice(20) do |group|
   name_f = File.open("NAME#{i}.DAT", 'w:windows-1251')
   name_f.write("#{group.length}\r\n")
   group.each do |prep|
@@ -227,23 +227,95 @@ baza_f = File.open('BAZA.DAT', 'w:windows-1251')
 baza_f.write(" 21 21 21 324\r\n")
 
 ## Часы.
-324.times do
-  baza_f.write("#{'   0' * 63}\r\n")
+[1,2,3,4,5,6].each do |c|
+  data["course_#{c}"].each do |g|
+    written = 21
+    g[:lectures].each do |lecture|
+      next if 0 == lecture[:count].to_i
+      #baza_f.write("#{'%06s' % (uniq_subjects.index(lecture[:subject]) + 1).to_s}")
+      #written -= 1
+    end
+    written.times { baza_f.write('   0') }
+
+    written = 21
+    written.times { baza_f.write('   0') }
+
+    written = 21
+    written.times { baza_f.write('   0') }
+
+    baza_f.write("\r\n")
+  end
 end
 
 ## Преподаватели.
-324.times do
-  baza_f.write("#{'    0' * 63}\r\n")
+[1,2,3,4,5,6].each do |c|
+  data["course_#{c}"].each do |g|
+    written = 21
+    g[:lectures].each do |lecture|
+      next if 0 == lecture[:count].to_i
+      next if lecture[:prep].nil?
+      next if 'Вакансия' == lecture[:prep]
+      #puts uniq_preps
+      #puts lecture[:prep].inspect
+      baza_f.write("#{'%05s' % (uniq_preps.index { |p| p[:name] == lecture[:prep][1..-1] } + 1).to_s}")
+      written -= 1
+    end
+    written.times { baza_f.write('    0') }
+
+    written = 21
+    written.times { baza_f.write('    0') }
+
+    written = 21
+    written.times { baza_f.write('    0') }
+
+    baza_f.write("\r\n")
+  end
 end
 
 ## Как?.
-324.times do
-  baza_f.write("#{' 0' * 63}\r\n")
+[1,2,3,4,5,6].each do |c|
+  data["course_#{c}"].each do |g|
+    written = 21
+    g[:lectures].each do |lecture|
+      next if 0 == lecture[:count].to_i
+      #baza_f.write("#{'%06s' % (uniq_subjects.index(lecture[:subject]) + 1).to_s}")
+      #written -= 1
+    end
+    written.times { baza_f.write(' 0') }
+
+    written = 21
+    written.times { baza_f.write(' 0') }
+
+    written = 21
+    written.times { baza_f.write(' 0') }
+
+    baza_f.write("\r\n")
+  end
 end
 
 ## Особенности.
-324.times do
-  baza_f.write("#{'  0' * 63}\r\n")
+[1,2,3,4,5,6].each do |c|
+  data["course_#{c}"].each do |g|
+    written = 21
+    g[:lectures].each do |lecture|
+      next if 0 == lecture[:count].to_i
+      if lecture[:flow].nil?
+        baza_f.write('  0')
+      else
+          baza_f.write('  7')
+      end
+      written -= 1
+    end
+    written.times { baza_f.write('  0') }
+
+    written = 21
+    written.times { baza_f.write('  0') }
+
+    written = 21
+    written.times { baza_f.write('  0') }
+
+    baza_f.write("\r\n")
+  end
 end
 
 ## Дисциплины.
@@ -251,6 +323,8 @@ end
   data["course_#{c}"].each do |g|
     written = 21
     g[:lectures].each do |lecture|
+      next if 0 == lecture[:count].to_i
+      baza_f.write("#{'%06s' % (uniq_subjects.index(lecture[:subject]) + 1).to_s}")
       written -= 1
     end
     written.times { baza_f.write('     0') }
@@ -266,6 +340,22 @@ end
 end
 
 ## Часы на нечётной неделе.
-324.times do
-  baza_f.write("#{'   0' * 63}\r\n")
+[1,2,3,4,5,6].each do |c|
+  data["course_#{c}"].each do |g|
+    written = 21
+    g[:lectures].each do |lecture|
+      next if 0 == lecture[:count].to_i
+      #baza_f.write("#{'%06s' % (uniq_subjects.index(lecture[:subject]) + 1).to_s}")
+      #written -= 1
+    end
+    written.times { baza_f.write('   0') }
+
+    written = 21
+    written.times { baza_f.write('   0') }
+
+    written = 21
+    written.times { baza_f.write('   0') }
+
+    baza_f.write("\r\n")
+  end
 end
