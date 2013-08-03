@@ -154,7 +154,6 @@ mega.each do |row|
   name = row[:prep][1..row[:prep].length]
   preps.push({ name: name, department: row[:department] })
 end
-
 uniq_preps = preps.uniq { |item| item[:department] + item[:name] }
 
 i = 1
@@ -173,4 +172,21 @@ while i <= 99 do
   name_f.write("0\r\n")
 
   i += 1
+end
+
+# Формируем списки дисциплин.
+subjects = []
+mega.each do |row|
+  next if row[:subject].nil?
+
+  name = row[:subject]
+  subjects.push(name)
+end
+uniq_subjects = subjects.uniq
+
+predmets_f = File.open('PREDMETS.DAT', 'w:windows-1251')
+uniq_subjects.each do |s|
+  predmets_f.write("#{s[0..99]}\r\n")
+  predmets_f.write("#{s[0..24]}\r\n")
+  predmets_f.write("#{s[0..7]}\r\n")
 end
