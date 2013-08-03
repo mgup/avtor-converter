@@ -9,7 +9,7 @@ end
 
 # Сортируем по названиям, чтобы была правильная последовательность подгрупп.
 [1, 2, 3, 4, 5, 6].each do |c|
-  data["course_#{c}"].sort { |a, b| a[:name] <=> b[:name] }
+  data["course_#{c}"].sort! { |a, b| a[:name] <=> b[:name] }
 end
 
 # 3 - факультет
@@ -42,6 +42,19 @@ CSV.foreach('data/mmega.txt', row_sep: :auto, col_sep: "\t", encoding: 'windows-
       room:       l[24].nil? ? nil : l[24].encode('UTF-8'),
       department: l[27].nil? ? nil : l[27].encode('UTF-8')
   }
+
+  # Пропускаем заочку и вечёрку.
+  next if 'З' == row[:group][0]
+  next if 'В' == row[:group][0]
+
+  # Если количество недель указано как 0, то это "скорее всего" какая-то практика.
+  next if 0 == row[:weeks].to_i
+
+  # Пропускаем аспирантуру.
+  next if row[:group].include?('А-')
+
+  #hours_to_weeks = row[:hours].to_f / row[:weeks].to_f
+  #puts row.inspect if 0 != hours_to_weeks % 1 && hours_to_weeks > 1
 
   row[:corpus] = case l[3].encode('UTF-8')
     when 'ГИ'
@@ -157,7 +170,7 @@ end
 uniq_preps = preps.uniq { |item| item[:department] + item[:name] }
 
 i = 1
-uniq_preps.each_slice(20) do |group|
+uniq_preps.sort { |a,b| a[:name] <=> b[:name] }.each_slice(20) do |group|
   name_f = File.open("NAME#{i}.DAT", 'w:windows-1251')
   name_f.write("#{group.length}\r\n")
   group.each do |prep|
@@ -182,11 +195,77 @@ mega.each do |row|
   name = row[:subject]
   subjects.push(name)
 end
-uniq_subjects = subjects.uniq
+uniq_subjects = subjects.uniq.sort { |a, b| a <=> b }
 
 predmets_f = File.open('PREDMETS.DAT', 'w:windows-1251')
 uniq_subjects.each do |s|
+  raise s if s.length > 100
   predmets_f.write("#{s[0..99]}\r\n")
   predmets_f.write("#{s[0..24]}\r\n")
   predmets_f.write("#{s[0..7]}\r\n")
+end
+
+[1,2,3,4,5,6].each do |c|
+  data["course_#{c}"].each do |g|
+    g[:lectures] = []
+
+    mega.each do |row|
+      if g[:name] == row[:group]
+        # Лекции
+        if 'Лек' == row[:type] || 'лек' == row[:type]
+          g[:lectures].push row
+        end
+      end
+    end
+
+    puts g.inspect
+  end
+end
+
+# Формирование учебных планов!!!
+baza_f = File.open('BAZA.DAT', 'w:windows-1251')
+baza_f.write(" 21 21 21 324\r\n")
+
+## Часы.
+324.times do
+  baza_f.write("#{'   0' * 63}\r\n")
+end
+
+## Преподаватели.
+324.times do
+  baza_f.write("#{'    0' * 63}\r\n")
+end
+
+## Как?.
+324.times do
+  baza_f.write("#{' 0' * 63}\r\n")
+end
+
+## Особенности.
+324.times do
+  baza_f.write("#{'  0' * 63}\r\n")
+end
+
+## Дисциплины.
+[1,2,3,4,5,6].each do |c|
+  data["course_#{c}"].each do |g|
+    written = 21
+    g[:lectures].each do |lecture|
+      written -= 1
+    end
+    written.times { baza_f.write('     0') }
+
+    written = 21
+    written.times { baza_f.write('     0') }
+
+    written = 21
+    written.times { baza_f.write('     0') }
+
+    baza_f.write("\r\n")
+  end
+end
+
+## Часы на нечётной неделе.
+324.times do
+  baza_f.write("#{'   0' * 63}\r\n")
 end
