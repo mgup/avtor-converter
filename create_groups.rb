@@ -4,7 +4,7 @@ data = {}
 end
 
 File.open('data/groups.txt').each do |l|
-  data["course_#{l[19]}"].push({ name: l[0..10].strip, count: l[22..23].strip, weeks: 0 })
+  data["course_#{l[19]}"].push({ name: l[0..10].strip, count: l[22..23].strip, weeks: 0, corpus: 0 })
 end
 
 # Сортируем по названиям, чтобы была правильная последовательность подгрупп.
@@ -53,22 +53,20 @@ CSV.foreach('data/mmega.txt', row_sep: :auto, col_sep: "\t", encoding: 'windows-
   # Пропускаем аспирантуру.
   next if row[:group].include?('А-')
 
-  #hours_to_weeks = row[:hours].to_f / row[:weeks].to_f
-  #puts row.inspect if 0 != hours_to_weeks % 1 && hours_to_weeks > 1
-
-  row[:corpus] = case l[3].encode('UTF-8')
-    when 'ГИ'
-      4
-    when 'ИДиЖ'
-      7
-    when 'ИТиМ'
-      1
-    when 'ПТ'
-      1
-    when 'РиСО'
-      1
-    when 'ЭиМ'
-      4
+  name = l[7].encode('UTF-8')
+  case name[1]
+    when 'Г'
+      row[:corpus] = 4
+    when 'К'
+      row[:corpus] = 7
+    when 'Ц'
+      row[:corpus] = 1
+    when 'Т'
+      row[:corpus] = 1
+    when 'Р'
+      row[:corpus] = 1
+    when 'Э'
+      row[:corpus] = 4
   end
 
   mega.push row
@@ -232,8 +230,19 @@ baza_f.write(" 21 21 21 324\r\n")
     written = 21
     g[:lectures].each do |lecture|
       next if 0 == lecture[:count].to_i
-      #baza_f.write("#{'%06s' % (uniq_subjects.index(lecture[:subject]) + 1).to_s}")
-      #written -= 1
+      next if 0 == lecture[:hours].to_i
+
+      hours_to_weeks = lecture[:hours].to_f / lecture[:weeks].to_f
+      if hours_to_weeks >= 1
+        if 0 == hours_to_weeks % 1
+          baza_f.write("#{'%04s' % hours_to_weeks.to_i.to_s}")
+          written -= 1
+          next
+        end
+      end
+
+      baza_f.write("#{'%04s' % 0.to_s}")
+      written -= 1
     end
     written.times { baza_f.write('   0') }
 
